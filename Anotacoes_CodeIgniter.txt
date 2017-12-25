@@ -1,0 +1,208 @@
+//Criando controller - projeto/application/controllers
+#tem que extender a classe CI_Controller
+<?php
+	class Produtos extends CI_Controller{
+	    public function index(){
+	    	...
+	}
+}
+
+//Criando diretorio dentro da view = projeto/views/cria_diretorio/cria_view
+
+//Acessando view 
+#utiliza um controller e suas funções para acessar a view 
+<?php
+	class Produtos extends CI_Controller{
+	    public function cadastro(){
+	    	$this->load->view("produtos/formulario",$dados);
+		}
+}
+
+
+//Para fazer pesquisas no BD
+#salva consultas(queries) nos arquivos model
+
+<?php
+	class Produtos_model extends CI_Model {
+
+	public function buscaTodos() {
+	    return $this->db->get("tabela_bd")->result_array();
+	}
+}
+
+#para acionar as consultas tem que utilizar uma classe controller
+<?php
+	class Produtos extends CI_Controller{
+	    public function cadastro(){
+	    	$this->load->model("produtos_model"); // carrega modelo
+	    	$this->load->database(); // carrega banco ou pega conexao
+
+	    	$produtos = $this->produtos_model->buscaTodos();  // executa a consulta
+
+	    	$dados = array("produtos" => $produtos); //converte dados
+    		$this->load->view("produtos/index.php" , $dados); //chama view
+		}
+}
+
+//Usando Helpers
+//arquivo bootstrap com erro 404, para solucionar utiliza uma função helper do CodeIgniter
+
+	#na hora de importar o arquivo boostrap na view usar função base_url
+	<link rel="stylesheet" href="<?= base_url("css/bootstrap.css") ?>">
+
+	#para utilizar a função base_url tem que carregala antes de carregar/chamar a view
+	<?php
+		class Produtos extends CI_Controller{
+		    public function index(){
+		    	$this->load->helper("url");
+		    	$this->load->view("produtos/index.php",$dados);
+			}
+		}
+
+
+
+Model: - Tudo aquilo que modela nossos objetos de negócio - Acessa o banco de dados
+
+Controller: - Classes que preparam a lógica de negócio - Fazem o direcionamento para a visualização
+
+Views - Os arquivos PHP que geram nosso HTML que é devolvido para o cliente.
+
+
+//montar formulario usando um helper
+	#no controller carregar help que cria form
+	<?php
+			class Produtos extends CI_Controller{
+			    public function index(){
+			    	$this->load->helper("form");  //carrega helper
+			    	$this->load->view("produtos/index.php"); //chama view q vai usar o helper
+				}
+			}
+	#no view utilizar tags para criar formulario
+					  		   controller/funcao
+				 echo form_open("usuario/novo");
+				 				 
+				    echo form_label("Nome: ", "nome");    
+				    echo form_input(array(
+				        "name" => "nome",
+				        "id" => "nome",
+				        "class" => "form-control",
+				        "maxlength" => "255"
+				    ));
+				   
+				    echo form_label("Senha: ", "senha");
+					echo form_password(array(
+					    "name" => "senha",
+					    "id" => "senha",
+					    "class" => "form-control",
+					    "maxlength" => "255"
+					));
+					
+					echo form_button(array(
+				    "class" => "btn btn-primary",
+				    "content" => "Cadastrar",
+				    "type" => "submit"
+					));
+				   echo form_close();
+
+
+	#para pegar form depois que ele for enviado
+	
+	class Usuarios extends CI_Controller {
+	    public function novo(){
+		    $usuario = array(
+	        	"nome" => $this->input->post("nome"),
+	        	"email" => $this->input->post("email"),
+	        	"senha" => md5($this->input->post("senha"))
+	    	);
+	    	...carrega banco
+	    	...carrega model
+	    	...chama função do model
+	    	...chama view pra demostrar resposta
+	    }
+	}
+
+
+	//validar formulario
+	#eu consigo validar os dados do formulario em uma classe controller, mesmo sem pegar os dados via post
+
+	$this->load->library('form_validation'); #carrega a biblioteca de validação
+	#cria as regras de validação
+	$this->form_validation->set_rules('nome', 'Nome', 'trim|required|min_length[4]|max_length[100]|alpha',
+		array('required' => 'Você deve preencher o campo %s.',
+			  'alpha' => 'O campo nome aceita apenas letras',
+			  'min_length' => 'numero minimo de caracteres no campo %s é 4'
+	));
+    #rodar a validação
+
+    if($this->form_validation->run() == FALSE) {
+    		#se deu merda
+	        $this->load->view('usuario/formulario.php');
+	    }else{
+	    	...carrega banco
+	    	...carrega model
+	    	...executa função da model
+	    	...chama nova view
+	    }
+
+
+    //
+
+	//inserir usuario no banco usando model(insert)
+
+	class Usuarios extends CI_Controller {
+	    public function novo(){
+		    $usuario = array(
+	        	"nome" => $this->input->post("nome"),
+	        	"email" => $this->input->post("email"),
+	        	"senha" => md5($this->input->post("senha"))
+	    	);
+	    	$this->load->database();
+	    	$this->load->model("usuario_model");
+	    	$this->usuario_model->salva($usuario);
+	    	$this->load->view("usuario/novo.php");
+	    }
+	}
+
+	class Usuarios_model extends CI_Model {
+	    public function salva($usuario) {
+	        $this->db->insert("usuarios", $usuario);
+	    }
+	}
+
+	//Procurar usuario no banco(select)
+	class Usuarios extends CI_Controller {
+	    public function novo(){
+		    #cria usuario igual o ex de cima ...
+	    	$this->load->database();
+	    	$this->load->model("usuario_model");
+	    	$resultadoUsuario = $this->usuario_model->procuraUsuario($email,$senha);
+	    	$this->load->view("usuario/novo.php");
+	    }
+	}
+
+	class Usuario_model extends CI_Model{
+		public function procuraUsuario($email,$senha){
+
+		$this->db->where("email", $email);
+        $this->db->where("senha", $senha);
+        						  //tabela
+        $usuario = $this->db->get("usuarios")->row_array();
+        return $usuario;
+		}
+	}
+
+	//como criar session 
+	$this->load->library('session'); #carrega biblioteca de session
+		#cria session
+		$this->session->set_userdata("usuario_logado", $resultadoUsuario); #session que fica mais tempo com user
+		$this->session->set_flashdata('mensagem', 'Logado com sucesso'); # flashdata session q fica ate uma requisi.
+
+		#chama a session
+		$this->session->userdata("usuario_logado");
+
+
+
+
+
+
+	

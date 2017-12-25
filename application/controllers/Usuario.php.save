@@ -1,0 +1,27 @@
+
+<?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+
+class Usuario extends CI_Controller{
+	public function cadastrar(){
+		//$this->load->database();
+
+		//usando helper
+		$this->load->helper("url");
+		$this->load->helper("form");
+
+		$this->load->view("usuario/formulario.php");
+	}
+
+	public function novo(){
+		$usuario = array(
+	        "nome" => $this->input->post("nome"),
+	        "email" => $this->input->post("email"),
+	        "senha" => md5($this->input->post("senha"))
+    	);
+
+    	$this->load->database();
+    	$this->load->model("usuario_model");
+    	$this->usuario_model->salva($usuario);
+    	$this->load->view("usuario/novo.php");
+	}
+}
